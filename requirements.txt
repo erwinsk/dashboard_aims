@@ -1,0 +1,44 @@
+# requirements.txt -- logger_dashboard_AiMS_FINAL_calibration_UDARAKU_1.py
+#
+# Disusun dari daftar `import` yang benar-benar dipakai di file dashboard
+# (dicek langsung dari kode, bukan tebakan): PyQt5 (GUI), pyqtgraph
+# (grafik, di-import di dalam main() setelah QApplication dibuat), numpy +
+# scipy.optimize (kalibrasi curve_fit), pyserial (komunikasi UART ke
+# ESP32). Modul lain yang dipakai (sys, os, json, time, csv, html, math,
+# warnings, collections) adalah bagian dari Python standar -- tidak perlu
+# di-install.
+#
+# Cara pakai:
+#   1. python3 -m venv venv && source venv/bin/activate   (Linux/Mac)
+#      python -m venv venv && venv\Scripts\activate        (Windows)
+#   2. pip install -r requirements.txt
+#   3. pyinstaller --noconfirm --onefile --windowed ^
+#        --name "AiMS_Dashboard_Udaraku" ^
+#        --collect-all pyqtgraph ^
+#        --collect-submodules scipy ^
+#        "logger_dashboard_AiMS_FINAL_calibration_ UDARAKU_1.py"
+#      (baris lanjutan pakai "^" di Windows cmd / "\" di Linux/Mac -- lihat
+#      catatan build lengkap yang saya kirim terpisah di chat.)
+#
+# Batas bawah versi dipilih dari baseline yang SUDAH DIKETAHUI stabil untuk
+# kombinasi ini (PyQt5 generasi 5.15.x, terakhir sebelum proyek pindah ke
+# PyQt6). TIDAK saya kunci ke versi persis (==) karena saya tidak bisa
+# memverifikasi dari sini versi apa yang benar-benar sudah Anda uji di
+# mesin build Anda -- setelah environment ini jalan & ter-build dengan
+# baik sekali, kunci ke versi pasti itu dengan:
+#   pip freeze > requirements.lock.txt
+# dan pakai file terkunci itu untuk build produksi berikutnya, supaya hasil
+# build konsisten dan tidak diam-diam berubah kalau ada rilis baru salah
+# satu paket ini.
+
+PyQt5>=5.15.9,<6
+PyQt5-sip>=12.11,<13
+pyqtgraph>=0.13.3
+numpy>=1.24
+scipy>=1.10
+pyserial>=3.5
+
+# Alat build itu sendiri -- bukan dependensi runtime dashboard, tapi
+# disertakan di sini supaya satu perintah "pip install -r requirements.txt"
+# sudah cukup untuk menyiapkan seluruh environment build.
+pyinstaller>=6.3
