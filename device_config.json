@@ -1,0 +1,82 @@
+{
+  "version": 1,
+  "device": {
+    "name": "ESP32 Sensor Logger",
+    "baudrate": 115200,
+    "mode": "always_on",
+    "deep_sleep_sec": 60
+  },
+  "dashboard": {
+    "widgets": [
+      {
+        "key": "sensors.t",
+        "label": "Suhu",
+        "unit": "°C",
+        "decimals": 1,
+        "show_graph": true
+      },
+      {
+        "key": "sensors.h",
+        "label": "Kelembaban",
+        "unit": "%",
+        "decimals": 1,
+        "show_graph": true
+      }
+    ]
+  },
+  "thresholds": [],
+  "sensor_labels": {},
+  "calibration": {},
+  "calibration_points": {},
+  "device_identity": {
+    "pn": "",
+    "sn": "",
+    "firmware_version": ""
+  },
+  "device_profiles": {},
+  "buzzer": {
+    "patterns": 10
+  },
+  "logging": {
+    "data_enabled": true,
+    "data_interval_sec": 60,
+    "data_retention_days": 7,
+    "system_enabled": true,
+    "system_retention_days": 30
+  },
+  "display": {
+    "update_interval_sec": 60,
+    "full_refresh_interval_min": 30
+  },
+  "udaraku": {
+    "enabled": false,
+    "url": "",
+    "key": "",
+    "kode_alat": "",
+    "interval_sec": 60,
+    "timeout_sec": 15,
+    "kanal": [],
+    "queue_enabled": true,
+    "queue_interval_sec": 5,
+    "fail_buzzer_enabled": true,
+    "fail_buzzer_pattern": 3,
+    "success_buzzer_enabled": true,
+    "success_buzzer_pattern": 1
+  },
+  "ui": {
+    "accent": "blue",
+    "theme": "light_purple",
+    "font_family": "Segoe UI",
+    "font_size": 13,
+    "custom_colors": {
+      "accent": "#7652a8",
+      "window_bg": "#ece8f4",
+      "panel_bg": "#fbf9fd",
+      "text": "#29242f",
+      "muted_text": "#746b7c",
+      "input_bg": "#ffffff",
+      "terminal_bg": "#1c1e22",
+      "terminal_text": "#d8dade"
+    }
+  }
+}
