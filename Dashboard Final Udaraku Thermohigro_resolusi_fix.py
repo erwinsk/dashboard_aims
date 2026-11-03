@@ -1897,16 +1897,21 @@ class LoggerDashboard(QMainWindow):
         outer.addWidget(scroll)
         return layout
 
-    def _new_splitter_tab_layout(self, tab_widget):
+    def _new_splitter_tab_layout(self, tab_widget, orientation=Qt.Vertical):
         """Alternatif _new_tab_layout() untuk tab yang isinya beberapa
-        panel "berat" (tabel besar dsb) yang saling berebut ruang vertikal
-        di layar kecil (mis. laptop 1360x768). Bedanya dengan
-        _new_tab_layout(): konten TIDAK dibungkus QScrollArea, melainkan
-        QSplitter(Qt.Vertical) yang memenuhi seluruh tinggi tab -- jadi
-        setiap panel benar-benar dapat jatah ruang vertikal (bukan cuma
-        sizeHint alami), DAN user bisa menarik manual garis pembatas antar
-        panel (splitter handle) untuk memperbesar salah satu panel (mis.
-        tabel daftar file SD Card) dengan mengecilkan panel lain.
+        panel "berat" (tabel besar dsb) yang saling berebut ruang di layar
+        kecil (mis. laptop 1360x768). Bedanya dengan _new_tab_layout():
+        konten TIDAK dibungkus QScrollArea, melainkan QSplitter yang
+        memenuhi seluruh area tab -- jadi setiap panel benar-benar dapat
+        jatah ruang (bukan cuma sizeHint alami), DAN user bisa menarik
+        manual garis pembatas antar panel (splitter handle) untuk
+        memperbesar salah satu panel dengan mengecilkan panel lain.
+
+        `orientation`: Qt.Vertical (default, panel bertumpuk atas-bawah --
+        dipakai tab Dashboard Designer) atau Qt.Horizontal (panel
+        berdampingan kiri-kanan -- dipakai tab SD Card, supaya tabel file
+        mendapat SELURUH tinggi tab alih-alih berbagi tinggi dengan panel
+        konfigurasi di atasnya).
 
         Return QSplitter kosong -- panggil self._add_splitter_pane() untuk
         menambah tiap panel (kembaliannya QVBoxLayout, dipakai persis
@@ -1915,9 +1920,9 @@ class LoggerDashboard(QMainWindow):
         outer.setContentsMargins(14, 12, 14, 12)
         outer.setSpacing(10)
 
-        splitter = QSplitter(Qt.Vertical)
+        splitter = QSplitter(orientation)
         # False supaya panel tidak bisa "ditarik sampai hilang total" ke
-        # tinggi 0 -- selalu ada minimumSizeHint layout di dalamnya yang
+        # ukuran 0 -- selalu ada minimumSizeHint layout di dalamnya yang
         # dihormati, jadi user tetap bisa menarik balik.
         splitter.setChildrenCollapsible(False)
         splitter.setHandleWidth(8)
@@ -1937,6 +1942,27 @@ class LoggerDashboard(QMainWindow):
         splitter.addWidget(pane)
         splitter.setStretchFactor(splitter.count() - 1, stretch)
         return layout
+
+    def _make_compact_table_button(self, text):
+        """Tombol kecil khusus untuk ditaruh DI DALAM sel tabel (lewat
+        setCellWidget) -- lihat _populate_file_table() dan tombol "Kirim"
+        di table_threshold. Tombol QPushButton biasa di app ini memakai
+        padding tema global (6px 12px, ~34px tinggi -- nyaman untuk layar
+        normal/sentuh), tapi kalau dipakai DI DALAM baris tabel, tinggi itu
+        ikut menentukan tinggi SATU BARIS tabel. Di layar kecil (1366x768)
+        dengan panel splitter yang sudah sempit (lihat
+        _new_splitter_tab_layout), ini membuat cuma 3-4 baris yang
+        kelihatan sebelum perlu scroll -- baris sisanya jadi tidak
+        kelihatan (laporan nyata: baris file di SD Card tidak kelihatan/
+        tidak bisa didownload). Tombol di sini sengaja dibuat lebih
+        pendek & padding lebih tipis, HANYA untuk konteks dalam tabel --
+        warna/border tetap ikut tema (diwariskan dari stylesheet global,
+        cuma padding & tinggi yang dioverride di sini), dan tombol normal
+        di tempat lain SAMA SEKALI TIDAK ikut berubah."""
+        btn = QPushButton(text)
+        btn.setFixedHeight(24)
+        btn.setStyleSheet("QPushButton { padding: 2px 8px; }")
+        return btn
 
     def _make_expanding_table(self, min_height=160):
         """QTableWidget dengan size policy Expanding (bukan default
@@ -2159,20 +2185,25 @@ class LoggerDashboard(QMainWindow):
         layout.addStretch()
 
     def setup_tab_sdcard(self):
-        """Tab SD Card dipecah jadi 2 panel lewat QSplitter vertikal
-        (_new_splitter_tab_layout) supaya di layar kecil (1360x768 dst.)
-        panel "Browse SD Card" -- yang paling sering perlu dilihat banyak
-        baris sekaligus -- bisa DITARIK MANUAL oleh user lebih besar
-        dengan mengecilkan panel Konfigurasi Logger di atasnya, alih-alih
-        cuma menampilkan beberapa baris lalu terpotong/perlu scroll
-        halaman penuh."""
-        splitter = self._new_splitter_tab_layout(self.tab_sdcard)
+        """Tab SD Card dipecah jadi 2 panel BERDAMPINGAN (kiri-kanan) lewat
+        QSplitter horizontal (_new_splitter_tab_layout, orientation=
+        Qt.Horizontal): KIRI = Konfigurasi Logger, KANAN = Browse SD Card.
+        Dengan susunan ini tabel file di kanan mendapat SELURUH tinggi tab
+        (sebelumnya, susunan atas-bawah membuatnya berbagi tinggi dengan
+        panel konfigurasi, sehingga di layar 1366x768 cuma muat beberapa
+        baris dan sisanya tidak kelihatan). Garis pembatas kiri-kanan tetap
+        bisa DITARIK MANUAL oleh user kapan saja."""
+        splitter = self._new_splitter_tab_layout(self.tab_sdcard, Qt.Horizontal)
 
         self.lbl_sd_detail = QLabel("Status SD Card: --")
         self.lbl_sd_detail.setObjectName("statusCard")
+        # Panel kiri sekarang lebih sempit dari lebar tab penuh -- teks
+        # status yang panjang harus membungkus baris, bukan memaksa panel
+        # melebar.
+        self.lbl_sd_detail.setWordWrap(True)
 
-        # --- Panel 1: Konfigurasi Logger (Data & System) ---------------
-        pane_config = self._add_splitter_pane(splitter, stretch=0)
+        # --- Panel KIRI: Konfigurasi Logger (Data & System) -------------
+        pane_config = self._add_splitter_pane(splitter, stretch=2)
         pane_config.addWidget(self.lbl_sd_detail)
 
         # Konfigurasi Data Logger & System Logger (disimpan ke flash ESP32
@@ -2208,7 +2239,10 @@ class LoggerDashboard(QMainWindow):
         form_sys.addRow("Retention:", self.sp_system_retention)
         v_log.addLayout(form_sys)
 
-        h_log = QHBoxLayout()
+        # Tombol disusun VERTIKAL (bukan berjajar horizontal seperti
+        # sebelumnya): panel kiri sekarang sempit, dua tombol berjajar
+        # dengan teks panjang akan memaksa lebar minimum panel membengkak
+        # dan menyempitkan panel browse di kanan.
         btn_get_logging = QPushButton("Muat Konfigurasi Logger dari Device")
         btn_get_logging.clicked.connect(
             lambda: self.send_json_command({"cmd": "GET_CONFIG"}, ui_button=btn_get_logging)
@@ -2218,16 +2252,14 @@ class LoggerDashboard(QMainWindow):
         btn_sync_logging.clicked.connect(
             lambda: self.sync_logging_config(ui_button=btn_sync_logging)
         )
-        h_log.addWidget(btn_get_logging)
-        h_log.addWidget(btn_sync_logging)
-        h_log.addStretch()
-        v_log.addLayout(h_log)
+        v_log.addWidget(btn_get_logging)
+        v_log.addWidget(btn_sync_logging)
 
         pane_config.addWidget(grp_logging)
         pane_config.addStretch()
 
-        # --- Panel 2: Browse SD Card (navigasi + tabel file + progress) ---
-        pane_browse = self._add_splitter_pane(splitter, stretch=1)
+        # --- Panel KANAN: Browse SD Card (navigasi + tabel file + progress) ---
+        pane_browse = self._add_splitter_pane(splitter, stretch=3)
 
         # Navigasi folder: breadcrumb menunjukkan path saat ini + tombol
         # untuk naik ke folder induk. Path disimpan di self.sd_current_path
@@ -2281,11 +2313,12 @@ class LoggerDashboard(QMainWindow):
         vp.addWidget(self.progress_sd_download)
         pane_browse.addWidget(grp_progress)
 
-        # Ukuran awal panel: kasih "Browse SD Card" porsi lebih besar
-        # daripada "Konfigurasi Logger" sejak awal dibuka -- user tetap
-        # bebas menarik ulang garis pembatasnya kapan saja lewat handle
-        # splitter di antara kedua panel ini.
-        splitter.setSizes([260, 520])
+        # Lebar awal panel: "Browse SD Card" (kanan) dapat porsi lebih besar
+        # daripada "Konfigurasi Logger" (kiri) -- tabel file butuh lebar
+        # untuk kolom Nama File + Ukuran + Aksi. Ini hanya PROPORSI awal
+        # (Qt menskalakannya ke lebar tab sebenarnya); user tetap bebas
+        # menarik ulang garis pembatasnya kapan saja lewat handle splitter.
+        splitter.setSizes([380, 620])
 
     def setup_tab_control(self):
         layout = self._new_tab_layout(self.tab_control)
@@ -3968,11 +4001,12 @@ class LoggerDashboard(QMainWindow):
                     row, col, QTableWidgetItem(str(value))
                 )
 
-            btn = QPushButton("Kirim")
+            btn = self._make_compact_table_button("Kirim")
             btn.clicked.connect(
                 lambda _, tid=normalized.get("id"): self.send_threshold_by_id(tid)
             )
             self.table_threshold.setCellWidget(row, 7, btn)
+            self.table_threshold.setRowHeight(row, 28)
 
         if migrated:
             self.thresholds[:] = [
@@ -4608,26 +4642,28 @@ class LoggerDashboard(QMainWindow):
             action_widget = QWidget()
             h = QHBoxLayout(action_widget)
             h.setContentsMargins(0, 0, 0, 0)
+            h.setSpacing(4)
 
             if is_dir:
                 # Folder: tombol "Buka" untuk masuk ke dalamnya (sama seperti
                 # double-click baris), tidak ada Download/Delete untuk folder
                 # sistem seperti "System Volume Information" supaya aman.
-                bo = QPushButton("Buka")
+                bo = self._make_compact_table_button("Buka")
                 bo.clicked.connect(lambda _, f=filename: self.open_sd_folder(f))
                 h.addWidget(bo)
             else:
-                bd = QPushButton("Download")
+                bd = self._make_compact_table_button("Download")
                 bd.clicked.connect(
                     lambda _, f=filename, b=bd: self.send_json_command({
                         "cmd": "GET_FILE", "filename": self._sd_join(self.sd_current_path, f)
                     }, ui_button=b)
                 )
-                bx = QPushButton("Delete")
+                bx = self._make_compact_table_button("Delete")
                 bx.clicked.connect(lambda _, f=filename: self.delete_log_file(f))
                 h.addWidget(bd)
                 h.addWidget(bx)
             self.table_files.setCellWidget(row, 2, action_widget)
+            self.table_files.setRowHeight(row, 28)
 
     def _sd_join(self, path, name):
         """Gabungkan path folder saat ini dengan nama file/folder, hasil path
